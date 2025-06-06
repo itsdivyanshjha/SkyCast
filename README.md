@@ -2,8 +2,6 @@
 
 SkyCast is a sleek and responsive weather forecast application built with Next.js and Tailwind CSS. It provides real-time weather data and a 5-day forecast for any location in the world.
 
-![SkyCast Screenshot](public/screenshot.png) 
-
 ## Features
 
 -   **Current Weather:** Get up-to-the-minute weather information, including temperature, "feels like" temperature, humidity, wind speed, and more.
