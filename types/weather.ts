@@ -94,4 +94,131 @@ export interface OpenWeatherForecastResponse {
     };
     pop: number;
   }>;
+}
+
+// ================= NEW ADVANCED TYPES =================
+
+// Database storage types
+export interface WeatherQuery {
+  _id?: string;
+  location: string;
+  locationNormalized: string; // Standardized location name
+  coordinates?: {
+    lat: number;
+    lon: number;
+  };
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
+  weatherData: WeatherData;
+  forecastData?: ForecastData;
+  createdAt: Date;
+  updatedAt: Date;
+  tags?: string[];
+  userNotes?: string;
+}
+
+// AI insights type
+export interface AIInsight {
+  _id?: string;
+  queryId: string;
+  location: string;
+  insight: string;
+  recommendations: string[];
+  weatherSummary: string;
+  travelAdvice?: string;
+  clothingRecommendations?: string[];
+  activitySuggestions?: string[];
+  generatedAt: Date;
+  model: string; // OpenRouter model used
+}
+
+// Location intelligence
+export interface LocationMatch {
+  name: string;
+  country: string;
+  state?: string;
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
+  confidence: number;
+}
+
+// Location context (replaces YouTube videos)
+export interface LocationContext {
+  facts: string[];
+  activities: string[];
+  seasonalInfo: string;
+  localTime: string;
+  timezone: string;
+  weatherTips: string[];
+}
+
+// Export formats
+export type ExportFormat = 'json' | 'csv' | 'xml' | 'pdf' | 'markdown';
+
+export interface ExportData {
+  queries: WeatherQuery[];
+  insights: AIInsight[];
+  exportedAt: Date;
+  format: ExportFormat;
+}
+
+// Date range validation
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface DateRangeValidation {
+  isValid: boolean;
+  errors: string[];
+  adjustedRange?: DateRange;
+}
+
+// API request/response types
+export interface CreateWeatherQueryRequest {
+  location: string;
+  dateRange: DateRange;
+  userNotes?: string;
+  tags?: string[];
+}
+
+export interface UpdateWeatherQueryRequest {
+  location?: string;
+  dateRange?: DateRange;
+  userNotes?: string;
+  tags?: string[];
+}
+
+export interface WeatherQueryResponse {
+  query: WeatherQuery;
+  aiInsight?: AIInsight;
+  locationContext?: LocationContext;
+}
+
+// Search and filter types
+export interface WeatherQueryFilters {
+  location?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tags?: string[];
+  hasAIInsight?: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Error handling
+export interface APIError {
+  message: string;
+  code: string;
+  details?: any;
 } 
