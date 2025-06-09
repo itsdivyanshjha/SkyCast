@@ -105,65 +105,146 @@ class ExportService {
     timestamp: string
   ): { data: string; filename: string; mimeType: string } {
     const exportData = {
-      export: {
-        '@': {
-          exportedAt: new Date().toISOString(),
-          format: 'xml'
-        },
-        weatherQueries: {
-          query: queries.map(query => ({
-            '@': { id: query._id },
-            location: query.location,
-            dateRange: {
-              startDate: query.dateRange.startDate,
-              endDate: query.dateRange.endDate
-            },
-            weatherData: {
-              temperature: query.weatherData.temperature,
-              description: query.weatherData.description,
-              humidity: query.weatherData.humidity,
-              windSpeed: query.weatherData.windSpeed,
-              feelsLike: query.weatherData.feelsLike,
-              pressure: query.weatherData.pressure,
-              visibility: query.weatherData.visibility
-            },
-            metadata: {
-              createdAt: query.createdAt,
-              userNotes: query.userNotes || '',
-              tags: query.tags?.join(', ') || ''
-            }
-          }))
-        },
-        aiInsights: {
-          insight: insights.map(insight => ({
-            '@': { id: insight._id, queryId: insight.queryId },
-            location: insight.location,
-            insight: insight.insight,
-            recommendations: insight.recommendations?.join(' | ') || '',
-            weatherSummary: insight.weatherSummary,
-            travelAdvice: insight.travelAdvice || '',
-            clothingRecommendations: insight.clothingRecommendations?.join(' | ') || '',
-            activitySuggestions: insight.activitySuggestions?.join(' | ') || '',
-            metadata: {
-              generatedAt: insight.generatedAt,
-              model: insight.model
-            }
-          }))
-        }
+      '@': {
+        exportedAt: new Date().toISOString(),
+        format: 'xml',
+        totalQueries: queries.length.toString(),
+        totalInsights: insights.length.toString()
+      },
+      weatherQueries: {
+        query: queries.map(query => ({
+          '@': { id: query._id },
+          location: query.location,
+          dateRange: {
+            startDate: query.dateRange.startDate,
+            endDate: query.dateRange.endDate
+          },
+          weatherData: {
+            temperature: query.weatherData.temperature.toString(),
+            description: query.weatherData.description,
+            humidity: query.weatherData.humidity.toString(),
+            windSpeed: query.weatherData.windSpeed.toString(),
+            feelsLike: query.weatherData.feelsLike.toString(),
+            pressure: query.weatherData.pressure.toString(),
+            visibility: query.weatherData.visibility.toString()
+          },
+          metadata: {
+            createdAt: query.createdAt,
+            userNotes: query.userNotes || '',
+            tags: query.tags?.join(', ') || ''
+          }
+        }))
+      },
+      aiInsights: {
+        insight: insights.map(insight => ({
+          '@': { id: insight._id, queryId: insight.queryId },
+          location: insight.location,
+          insight: insight.insight,
+          recommendations: insight.recommendations?.join(' | ') || '',
+          weatherSummary: insight.weatherSummary,
+          travelAdvice: insight.travelAdvice || '',
+          clothingRecommendations: insight.clothingRecommendations?.join(' | ') || '',
+          activitySuggestions: insight.activitySuggestions?.join(' | ') || '',
+          metadata: {
+            generatedAt: insight.generatedAt,
+            model: insight.model
+          }
+        }))
       }
     };
 
-    const xmlData = js2xml('skyCastExport', exportData, {
-      compact: false,
-      ignoreComment: true,
-      spaces: 2
-    });
+    try {
+      const xmlData = js2xml('skyCastExport', exportData, {
+        compact: false,
+        ignoreComment: true,
+        spaces: 2
+      });
 
-    return {
-      data: xmlData,
-      filename: `skycast_weather_data_${timestamp}.xml`,
-      mimeType: 'application/xml'
-    };
+      return {
+        data: xmlData,
+        filename: `skycast_weather_data_${timestamp}.xml`,
+        mimeType: 'application/xml'
+      };
+    } catch (error) {
+      console.error('XML export error:', error);
+      
+      // Fallback to simple XML generation if js2xmlparser fails
+      const simpleXML = this.generateSimpleXML(queries, insights, timestamp);
+      return {
+        data: simpleXML,
+        filename: `skycast_weather_data_${timestamp}.xml`,
+        mimeType: 'application/xml'
+      };
+    }
+  }
+
+  private generateSimpleXML(
+    queries: WeatherQuery[],
+    insights: AIInsight[],
+    timestamp: string
+  ): string {
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += `<skyCastExport exportedAt="${new Date().toISOString()}" format="xml" totalQueries="${queries.length}" totalInsights="${insights.length}">\n`;
+    
+    // Weather Queries
+    xml += '  <weatherQueries>\n';
+    queries.forEach(query => {
+      xml += `    <query id="${query._id}">\n`;
+      xml += `      <location>${this.escapeXML(query.location)}</location>\n`;
+      xml += `      <dateRange>\n`;
+      xml += `        <startDate>${query.dateRange.startDate}</startDate>\n`;
+      xml += `        <endDate>${query.dateRange.endDate}</endDate>\n`;
+      xml += `      </dateRange>\n`;
+      xml += `      <weatherData>\n`;
+      xml += `        <temperature>${query.weatherData.temperature}</temperature>\n`;
+      xml += `        <description>${this.escapeXML(query.weatherData.description)}</description>\n`;
+      xml += `        <humidity>${query.weatherData.humidity}</humidity>\n`;
+      xml += `        <windSpeed>${query.weatherData.windSpeed}</windSpeed>\n`;
+      xml += `        <feelsLike>${query.weatherData.feelsLike}</feelsLike>\n`;
+      xml += `        <pressure>${query.weatherData.pressure}</pressure>\n`;
+      xml += `        <visibility>${query.weatherData.visibility}</visibility>\n`;
+      xml += `      </weatherData>\n`;
+      xml += `      <metadata>\n`;
+      xml += `        <createdAt>${query.createdAt}</createdAt>\n`;
+      xml += `        <userNotes>${this.escapeXML(query.userNotes || '')}</userNotes>\n`;
+      xml += `        <tags>${this.escapeXML(query.tags?.join(', ') || '')}</tags>\n`;
+      xml += `      </metadata>\n`;
+      xml += `    </query>\n`;
+    });
+    xml += '  </weatherQueries>\n';
+    
+    // AI Insights
+    xml += '  <aiInsights>\n';
+    insights.forEach(insight => {
+      xml += `    <insight id="${insight._id}" queryId="${insight.queryId}">\n`;
+      xml += `      <location>${this.escapeXML(insight.location)}</location>\n`;
+      xml += `      <insight>${this.escapeXML(insight.insight)}</insight>\n`;
+      xml += `      <recommendations>${this.escapeXML(insight.recommendations?.join(' | ') || '')}</recommendations>\n`;
+      xml += `      <weatherSummary>${this.escapeXML(insight.weatherSummary)}</weatherSummary>\n`;
+      xml += `      <travelAdvice>${this.escapeXML(insight.travelAdvice || '')}</travelAdvice>\n`;
+      xml += `      <clothingRecommendations>${this.escapeXML(insight.clothingRecommendations?.join(' | ') || '')}</clothingRecommendations>\n`;
+      xml += `      <activitySuggestions>${this.escapeXML(insight.activitySuggestions?.join(' | ') || '')}</activitySuggestions>\n`;
+      xml += `      <metadata>\n`;
+      xml += `        <generatedAt>${insight.generatedAt}</generatedAt>\n`;
+      xml += `        <model>${this.escapeXML(insight.model)}</model>\n`;
+      xml += `      </metadata>\n`;
+      xml += `    </insight>\n`;
+    });
+    xml += '  </aiInsights>\n';
+    
+    xml += '</skyCastExport>\n';
+    
+    return xml;
+  }
+
+  private escapeXML(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   private async exportToPDF(
